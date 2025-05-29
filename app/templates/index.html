@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vytěžování faktur</title>
+    <style>
+        body { font-family: sans-serif; padding: 2em; background: #f4f4f4; }
+        form { background: white; padding: 2em; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .results { margin-top: 2em; background: #e9ffe9; padding: 1em; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Nahraj PDF fakturu</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="application/pdf" required>
+        <button type="submit">Odeslat</button>
+    </form>
+
+    {% if extracted %}
+    <div class="results">
+        <h2>Výsledky vytěžení</h2>
+        <ul>
+            {% for key, value in extracted.items() %}
+                <li><strong>{{ key }}:</strong> {{ value or "nenalezeno" }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</body>
+</html>
