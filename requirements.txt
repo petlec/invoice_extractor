@@ -1,4 +1,8 @@
 fastapi
 uvicorn
+pytesseract
+pdf2image
 pdfplumber
-jinja2
+openai
+python-dotenv
+babel
