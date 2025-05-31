@@ -1,29 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="cs">
 <head>
-    <title>Vytěžování faktur</title>
-    <style>
-        body { font-family: sans-serif; padding: 2em; background: #f4f4f4; }
-        form { background: white; padding: 2em; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .results { margin-top: 2em; background: #e9ffe9; padding: 1em; border-radius: 6px; }
-    </style>
+    <meta charset="UTF-8">
+    <title>Vytěžování faktury</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Nahraj PDF fakturu</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept="application/pdf" required>
-        <button type="submit">Odeslat</button>
-    </form>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="bg-white shadow-lg rounded-lg p-8 w-full max-w-3xl">
+        <h1 class="text-2xl font-bold mb-6 text-center">🧾 Vytěžování faktury</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data" class="mb-6 flex items-center">
+            <input type="file" name="file" class="border p-2 rounded w-full" required>
+            <button type="submit" class="ml-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Nahrát</button>
+        </form>
 
-    {% if extracted %}
-    <div class="results">
-        <h2>Výsledky vytěžení</h2>
-        <ul>
-            {% for key, value in extracted.items() %}
-                <li><strong>{{ key }}:</strong> {{ value or "nenalezeno" }}</li>
-            {% endfor %}
-        </ul>
+        {% if extracted %}
+        <h2 class="text-xl font-semibold mb-4">✅ Výsledky vytěžení</h2>
+        <table class="table-auto w-full text-left border border-gray-300 bg-white shadow-sm">
+            <tbody class="divide-y divide-gray-200">
+                <tr><th class="p-2 font-medium">Variabilní symbol</th><td class="p-2">{{ extracted.variabilni_symbol }}</td></tr>
+                <tr><th class="p-2 font-medium">Datum vystavení</th><td class="p-2">{{ extracted.datum_vystaveni|format_cz_date }}</td></tr>
+                <tr><th class="p-2 font-medium">Datum splatnosti</th><td class="p-2">{{ extracted.datum_splatnosti|format_cz_date }}</td></tr>
+                <tr><th class="p-2 font-medium">DUZP</th><td class="p-2">{{ extracted.duzp|format_cz_date }}</td></tr>
+                <tr><th class="p-2 font-medium">Částka s DPH</th><td class="p-2">{{ extracted.castka_s_dph|format_czk }}</td></tr>
+                <tr><th class="p-2 font-medium">Základ DPH</th><td class="p-2">{{ extracted.zaklad_dph|format_czk }}</td></tr>
+                <tr><th class="p-2 font-medium">Výše DPH</th><td class="p-2">{{ extracted.vyse_dph|format_czk }}</td></tr>
+                <tr>
+                    <th class="p-2 font-medium">Dodavatel</th>
+                    <td class="p-2">
+                        <strong>Název:</strong> {{ extracted.dodavatel.nazev }}<br>
+                        <strong>Adresa:</strong> {{ extracted.dodavatel.adresa }}<br>
+                        <strong>IČO:</strong> {{ extracted.dodavatel.ico }}<br>
+                        <strong>DIČ:</strong> {{ extracted.dodavatel.dic }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        {% endif %}
     </div>
-    {% endif %}
 </body>
 </html>

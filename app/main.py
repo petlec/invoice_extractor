@@ -5,24 +5,46 @@ from fastapi.staticfiles import StaticFiles
 from pytesseract import image_to_string
 from pdf2image import convert_from_path
 import pytesseract
-from pdf2image import convert_from_path
 import pdfplumber
 import re
 import os
 import openai
 import json
 from openai import OpenAI
+from dotenv import load_dotenv
+from datetime import datetime
+from babel.numbers import format_currency
 
+# Načtení API klíče z .env
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
 
 # Cesta k šablonám
 templates = Jinja2Templates(directory="app/templates")
+
+# --- JINJA FILTRY ---
+def format_cz_date(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%d.%m.%Y")
+    except:
+        return value
+
+def format_czk(value):
+    try:
+        num = float(value.replace(",", ".").replace(" ", ""))
+        return format_currency(num, 'CZK', locale='cs_CZ')
+    except:
+        return value
+
+templates.env.filters["format_cz_date"] = format_cz_date
+templates.env.filters["format_czk"] = format_czk
 
 # Inicializace FastAPI
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Nastavení cesty k Tesseract OCR
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
 def extract_text_from_pdf(file_path: str) -> str:
     text = ""
@@ -41,7 +63,7 @@ def extract_text_from_pdf(file_path: str) -> str:
         text = ""
         for image in images:
             text += pytesseract.image_to_string(image, lang="ces+eng") + "\n"
-    
+
     text = text.replace('\n', ' ').replace('\r', ' ')
     text = re.sub(r'\s+', ' ', text)
 
@@ -49,36 +71,22 @@ def extract_text_from_pdf(file_path: str) -> str:
 
 def extract_by_regex(full_text: str) -> dict:
     extracted = {
-        "variabilní_symbol": None,
-        "datum_vystavení": None,
+        "variabilni_symbol": None,
+        "datum_vystaveni": None,
         "datum_splatnosti": None,
-        "datum_duzp": None,
-        "částka_celkem": None,
-        "částka_bez_dph": None,
-        "dph": None,
-        "dodavatel": None
+        "duzp": None,
+        "castka_s_dph": None,
+        "zaklad_dph": None,
+        "vyse_dph": None,
+        "dodavatel": {
+            "nazev": None,
+            "adresa": None,
+            "ico": None,
+            "dic": None
+        }
     }
-
-    patterns = {
-        "variabilní_symbol": r"Variabilní\s*symbol[:\s]+(\d{4,})",
-        "datum_vystavení": r"Datum\s+vystavení[:\s]+(\d{1,2}\.\s*\d{1,2}\.\s*\d{4})",
-        "datum_splatnosti": r"Datum\s+splatnosti[:\s]+(\d{1,2}\.\s*\d{1,2}\.\s*\d{4})",
-        "datum_duzp": r"(Datum\s+zdan\.?\s+plnění|DUZP)[:\s]+(\d{1,2}\.\s*\d{1,2}\.\s*\d{4})",
-        "částka_celkem": r"(\d{1,3}(?:\s\d{3})*,\d{2})\s*Kč",
-        "částka_bez_dph": r"21\s*%\s*(\d{1,3}(?:\s\d{3})*,\d{2})\s*Kč",
-        "dph": r"21\s*%\s*\d{1,3}(?:\s\d{3})*,\d{2}\s*Kč\s*(\d{1,3}(?:\s\d{3})*,\d{2})",
-        "dodavatel": r"DODAVATEL\s*(.*?)(?=\s+ODBĚRATEL|CZ\d{8,})"
-    }
-
-    for key, pattern in patterns.items():
-        if match := re.search(pattern, full_text, re.IGNORECASE | re.DOTALL):
-            if match.lastindex and match.lastindex >= 2:
-                extracted[key] = (match.group(2) or match.group(1)).strip()
-            else:
-                extracted[key] = match.group(1).strip()
 
     return extracted
-
 
 def extract_invoice_data(file_path: str) -> dict:
     full_text = extract_text_from_pdf(file_path)
@@ -102,29 +110,28 @@ def extract_invoice_data(file_path: str) -> dict:
     Text faktury:
     ----------------------
     {full_text}
+
+    Vrať odpověď výhradně jako dobře formátovaný JSON bez vysvětlení, komentářů nebo textu navíc.
     """
 
     try:
-        client = OpenAI()
+        client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
-            model="gpt-4o",  # nebo "gpt-4"
+            model="gpt-4o",
             messages=[
                 {"role": "user", "content": prompt}
             ],
             temperature=0.2
         )
-        return json.loads(response.choices[0].message.content)
-    
+        result_text = response.choices[0].message.content.strip()
+        print("📦 OpenAI odpověď:\n", result_text)
+        if result_text.startswith("```json"):
+            result_text = result_text.removeprefix("```json").removesuffix("```")
+        return json.loads(result_text)
+
     except Exception as e:
         print(f"⚠️ AI extrakce selhala: {e}")
-        # fallback na regex extrakci
         return extract_by_regex(full_text)
-
-
-
-# extracted_data = json.loads(response.choices[0].message["content"])
-# print(json.dumps(extracted_data, indent=2, ensure_ascii=False))
-
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
