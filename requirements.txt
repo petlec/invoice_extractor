@@ -7,3 +7,4 @@ openai
 python-dotenv
 jinja2
 babel
+python-multipart
