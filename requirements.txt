@@ -5,4 +5,5 @@ pdf2image
 pdfplumber
 openai
 python-dotenv
+jinja2
 babel
