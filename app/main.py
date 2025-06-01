@@ -13,7 +13,8 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from datetime import datetime
-from babel.numbers import format_currency
+from babel.numbers import format_currency, parse_decimal
+import decimal
 
 # Načtení API klíče z .env
 load_dotenv()
@@ -31,9 +32,14 @@ def format_cz_date(value):
 
 def format_czk(value):
     try:
-        num = float(value.replace(",", ".").replace(" ", ""))
-        return format_currency(round(num, 2), 'CZK', locale='cs_CZ')
-    except:
+        if isinstance(value, (int, float, decimal.Decimal)):
+            num = float(value)
+        else:
+            cleaned = re.sub(r'[^0-9,\.]', '', str(value)).replace(',', '.')
+            num = float(cleaned)
+        return format_currency(num, 'CZK', locale='cs_CZ')
+    except Exception as e:
+        print(f"❌ Chyba při formátování částky: {value} → {e}")
         return value
 
 templates.env.filters["format_cz_date"] = format_cz_date

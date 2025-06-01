@@ -1,0 +1,22 @@
+# Nezahrnuj .env soubory
+.env
+
+# Neposílej do GitHubu lokální cache, systémové soubory a buildy
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# IDE soubory
+.vscode/
+.idea/
+
+# Virtualenv
+venv/
+.env/
+
+# OS-specific
+.DS_Store
+Thumbs.db
