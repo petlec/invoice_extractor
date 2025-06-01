@@ -32,7 +32,7 @@ def format_cz_date(value):
 def format_czk(value):
     try:
         num = float(value.replace(",", ".").replace(" ", ""))
-        return format_currency(num, 'CZK', locale='cs_CZ')
+        return format_currency(round(num, 2), 'CZK', locale='cs_CZ')
     except:
         return value
 
@@ -111,6 +111,7 @@ def extract_invoice_data(file_path: str) -> dict:
     ----------------------
     {full_text}
 
+    Hledej pouze informace o DODAVATELI (ne odběrateli). Pokud text faktury obsahuje více firem, vyber tu, která fakturuje.
     Vrať odpověď výhradně jako dobře formátovaný JSON bez vysvětlení, komentářů nebo textu navíc.
     """
 
