@@ -15,7 +15,7 @@ Tato webová aplikace umožňuje nahrát PDF fakturu a automaticky z ní vytěž
 
 ## Spuštění lokálně
 ```bash
-git clone https://github.com/tvoje-jmeno/invoice-extractor.git
+git clone https://github.com/petlec/invoice_extractor.git
 cd invoice-extractor
 pip install -r requirements.txt
 uvicorn app.main:app --reload
