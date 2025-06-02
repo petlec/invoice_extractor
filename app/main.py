@@ -50,7 +50,9 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Nastavení cesty k Tesseract OCR
-pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+tesseract_cmd = os.getenv("TESSERACT_CMD")
+if tesseract_cmd:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
 
 def extract_text_from_pdf(file_path: str) -> str:
     text = ""
